@@ -22,7 +22,7 @@ def calc_wow(now, last):
     return f"{sign}{change:.2f}%"
 
 def run_analysis():
-    # 1. 抓取完整歷史數列 (抓取最近 20 筆確保平均計算足夠)
+    # 1. 抓取完整歷史數列
     res_series = fred.get_series('WRESBAL')
     asset_series = fred.get_series('TLAACBW027SBOG')
     gdp_series = fred.get_series('GDP')
@@ -40,7 +40,6 @@ def run_analysis():
     gdp_date = get_quarter_str(gdp_series.index[-1])
 
     # 2. 計算比例數列 (Series)，直接從歷史資料算平均
-    # 這裡將週數據進行對齊
     df_history = pd.DataFrame({
         'res': res_series / 1000,
         'asset': asset_series
@@ -48,11 +47,10 @@ def run_analysis():
 
     df_history['ratio'] = (df_history['res'] / df_history['asset']) * 100
     
-    # 計算準備金/總資產的平均
+    # 計算平均值
     avg_4w_asset = df_history['ratio'].tail(4).mean()
     avg_12w_asset = df_history['ratio'].tail(12).mean()
 
-    # 計算準備金/GDP的平均 (因為GDP頻率不同，我們用最新GDP與最近幾週的準備金對比)
     res_to_gdp_series = (df_history['res'] / gdp_now) * 100
     avg_4w_gdp = res_to_gdp_series.tail(4).mean()
     avg_12w_gdp = res_to_gdp_series.tail(12).mean()
@@ -61,6 +59,7 @@ def run_analysis():
     current_res_to_gdp = res_to_gdp_series.iloc[-1]
 
     # 3. 格式化 Telegram 訊息
+    # 注意：這裡使用多行字串避免引號斷裂問題
     msg = (
         f"🇺🇸 **美國流動性監測週報**\n"
         f"📅 報告日期：{datetime.now().strftime('%Y-%m-%d')}\n"
@@ -75,4 +74,4 @@ def run_analysis():
         f"━━━━━━━━━━━━━━━━━━\n\n"
         f"📊 **指標分析 (Ratios)**\n\n"
         f"1️⃣ **準備金 / 總資產**\n"
-        f"   現值：`{current_res_to_asset:.2f}%` (目標 12-1
+        f"   現值：`{current_res_to_asset:.2f}%` (目標
