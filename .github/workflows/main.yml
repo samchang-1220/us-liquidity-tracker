@@ -1,0 +1,37 @@
+name: Weekly Liquidity Report
+
+on:
+  schedule:
+    - cron: '0 12 * * 6' # 每週六中午 12:00 (UTC) 執行，對應台灣週六晚上
+  workflow_dispatch: # 允許手動點擊執行
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install fredapi pandas requests
+
+      - name: Run script
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: python main.py
+
+      - name: Commit and push database changes
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add database.csv
+          git commit -m "Update liquidity database" || exit 0
+          git push
